@@ -1,0 +1,319 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"sync"
+)
+
+type Node struct { //обычный узел
+	data      int
+	row       int
+	col       int
+	nextRight *Node
+	nextLeft  *Node
+	nextUp    *Node
+	nextDown  *Node
+}
+
+type List struct { //список с узлами
+	head *Node
+}
+
+func main() {
+	board := [4][4]int{}
+	SolveAlgX(board)
+}
+
+func SolveAlgX(board [4][4]int) [4][4]int {
+	var l = List{}
+	//var t = List{}
+	l = fillHeads(l)
+	//printList(l)
+	printListToFile(l)
+	return [4][4]int{}
+}
+
+func fillHeads(l List) List {
+	headList := &Node{data: 1, col: 0, row: 0}
+	l.head = headList
+	var wg sync.WaitGroup
+	wg.Add(2)
+	//Создаем заголовочные ноды столбцов
+	go func() {
+		currNode := l.head
+		for i := 1; i <= 64; i++ {
+			newNodeCol := &Node{data: 1, col: i, row: 0}
+			currNode.nextRight = newNodeCol
+			newNodeCol.nextLeft = currNode
+			currNode = newNodeCol
+		}
+		currNode.nextRight = l.head //соединяем вкруговую
+		l.head.nextLeft = currNode
+		wg.Done()
+	}()
+	//создаем заголовочные ноды строк
+	go func() {
+		currNode := l.head
+		for i := 1; i <= 64; i++ {
+			newNodeCol := &Node{data: 1, col: 0, row: i}
+			currNode.nextDown = newNodeCol
+			newNodeCol.nextUp = currNode
+			currNode = newNodeCol
+		}
+		currNode.nextDown = l.head //соединяем вкруговую
+		l.head.nextUp = currNode
+		wg.Done()
+	}()
+	wg.Wait()
+	//--- Заполняем ограничения в ячейках
+	wg.Add(16)
+	for rc := 0; rc < 16; rc++ {
+		go func(row, col int) {
+			currNodeDown := l.head
+			currNodeRight := l.head
+
+			for currNodeDown.row != row { //опускаемся на нужную строку
+				currNodeDown = currNodeDown.nextDown
+			}
+			for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+				currNodeRight = currNodeRight.nextRight
+			}
+
+			for r := row; r < row+4; r++ {
+				newNode := &Node{data: 1, col: col, row: r}
+				currNodeDown.nextRight = newNode //привязываемся к новой ноде справа
+				newNode.nextLeft = currNodeDown
+
+				newNode.nextUp = currNodeRight
+				currNodeRight.nextDown = newNode
+
+				currNodeRight = newNode
+				currNodeDown = currNodeDown.nextDown
+			}
+			wg.Done()
+		}(rc*4+1, rc+1)
+	}
+	wg.Wait()
+	//--- Заполняем ограничения в строках
+	rc := 17
+	rr := 1
+	wg.Add(16)
+	for irs := 0; irs < 4; irs++ {
+		for ir := 0; ir < 4; ir++ {
+			go func(row, col int) {
+				currNodeDown := l.head
+				currNodeRight := l.head
+
+				for currNodeDown.row != row { //опускаемся на нужную строку
+					currNodeDown = currNodeDown.nextDown
+				}
+				for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+					currNodeRight = currNodeRight.nextRight
+				}
+
+				for i := 0; i < 4; i++ {
+					newNode := &Node{data: 1, col: col, row: row + i*4}
+					currNodeDown.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+					newNode.nextLeft = currNodeDown.nextRight
+
+					newNode.nextUp = currNodeRight
+					currNodeRight.nextDown = newNode
+
+					currNodeRight = newNode
+					for j := 0; j < 4; j++ {
+						currNodeDown = currNodeDown.nextDown
+					}
+				}
+				wg.Done()
+			}(rr+16*ir+irs, rc+ir+irs*4)
+		}
+	}
+	wg.Wait()
+	//--- Заполняем ограничения в столбцах
+	rc = 33
+	rr = 1
+	wg.Add(16)
+	for irs := 0; irs < 4; irs++ {
+		for ir := 0; ir < 4; ir++ {
+			go func(row, col int) {
+				currNodeDown := l.head
+				currNodeRight := l.head
+
+				for currNodeDown.row != row { //опускаемся на нужную строку
+					currNodeDown = currNodeDown.nextDown
+				}
+				for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+					currNodeRight = currNodeRight.nextRight
+				}
+
+				for i := 0; i < 4; i++ {
+					newNode := &Node{data: 1, col: col, row: row + i*16}
+					currNodeDown.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+					newNode.nextLeft = currNodeDown.nextRight.nextRight
+
+					newNode.nextUp = currNodeRight
+					currNodeRight.nextDown = newNode
+
+					currNodeRight = newNode
+					for j := 0; j < 16; j++ {
+						currNodeDown = currNodeDown.nextDown
+					}
+				}
+				wg.Done()
+			}(rr+4*ir+irs, rc+ir+irs*4)
+		}
+	}
+	wg.Wait()
+	//--- Заполняем ограничения в боксах
+	rc = 49
+	rr = 1
+	wg.Add(16)
+	for irs := 0; irs < 4; irs++ {
+		irb := 0
+		switch irs {
+		case 1:
+			irb = 8
+		case 2:
+			irb = 32
+		case 3:
+			irb = 40
+		}
+
+		for ir := 0; ir < 4; ir++ {
+			go func(row, col int) {
+				currNodeDown := l.head
+				currNodeRight := l.head
+
+				for currNodeDown.row != row { //опускаемся на нужную строку
+					currNodeDown = currNodeDown.nextDown
+				}
+				for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+					currNodeRight = currNodeRight.nextRight
+				}
+
+				for i := 0; i < 4; i++ {
+					switch i {
+					case 0:
+						{
+							newNode := &Node{data: 1, col: col, row: row}
+							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+							newNode.nextUp = currNodeRight
+							currNodeRight.nextDown = newNode
+							for j := 0; j < 4; j++ {
+								currNodeDown = currNodeDown.nextDown
+							}
+						}
+					case 1:
+						{
+							newNode := &Node{data: 1, col: col, row: row + 4}
+							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+							newNode.nextUp = currNodeRight
+							currNodeRight.nextDown = newNode
+							for j := 0; j < 12; j++ {
+								currNodeDown = currNodeDown.nextDown
+							}
+						}
+					case 2:
+						{
+							newNode := &Node{data: 1, col: col, row: row + 16}
+							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+							newNode.nextUp = currNodeRight
+							currNodeRight.nextDown = newNode
+							for j := 0; j < 4; j++ {
+								currNodeDown = currNodeDown.nextDown
+							}
+						}
+					case 3:
+						{
+							newNode := &Node{data: 1, col: col, row: row + 20}
+							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+							newNode.nextUp = currNodeRight
+							/*currNodeRight.nextDown = newNode
+							for j := 0; j < 4; j++ {
+								currNodeDown = currNodeDown.nextDown
+							}*/
+						}
+					}
+
+				}
+				wg.Done()
+			}(rr+ir+irb, rc+4*ir+irs)
+		}
+	}
+	wg.Wait()
+	return l
+}
+
+func printListToFile(l List) {
+	currNode := l.head
+	// open output file
+	fo, err := os.Create("output.txt")
+	if err != nil {
+		panic(err)
+	}
+	// close fo on exit and check for its returned error
+	defer fo.Close()
+
+	for i := 0; i <= 64; i++ {
+		//fmt.Printf("%d\t", currNode.col)
+		_, err = fo.WriteString(fmt.Sprintf("%d\t", i)) // writing...
+		if err != nil {
+			fmt.Printf("error writing string: %v", err)
+		}
+		currNode = currNode.nextRight
+	}
+	_, err = fo.WriteString(fmt.Sprintf("\n")) // writing...
+	if err != nil {
+		fmt.Printf("error writing string: %v", err)
+	}
+	currNode = l.head.nextDown
+
+	for currNode != l.head {
+		if currNode == nil {
+			break
+		}
+		//fmt.Printf("%d", currNode.row) //заголовок строки
+		_, err = fo.WriteString(fmt.Sprintf("%d", currNode.row)) // writing...
+		if err != nil {
+			fmt.Printf("error writing string: %v", err)
+		}
+		amountTabs := 0 //номер предыдущего столбца
+		currNodeRow := currNode
+		for currNodeRow.nextRight != nil {
+			amountTabs = currNodeRow.nextRight.col - currNodeRow.col
+			for k := 0; k < amountTabs; k++ {
+				//fmt.Printf("\t")
+				_, err = fo.WriteString(fmt.Sprintf("\t")) // writing...
+				if err != nil {
+					fmt.Printf("error writing string: %v", err)
+				}
+			}
+			//fmt.Printf("1")
+			_, err = fo.WriteString(fmt.Sprintf("1")) // writing...
+			if err != nil {
+				fmt.Printf("error writing string: %v", err)
+			}
+			currNodeRow = currNodeRow.nextRight
+		}
+		//fmt.Printf("\n")
+		_, err = fo.WriteString(fmt.Sprintf("\n")) // writing...
+		if err != nil {
+			fmt.Printf("error writing string: %v", err)
+		}
+		currNode = currNode.nextDown
+	}
+}
+
+func printList(l List) {
+	currNode := l.head
+	for i := 0; i <= 64; i++ {
+		fmt.Printf("%d\t", currNode.col)
+		currNode = currNode.nextRight
+	}
+	fmt.Printf("\n") //распечатали заголовки столбцов
+}
