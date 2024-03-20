@@ -34,13 +34,12 @@ func main() {
 
 func SolveAlgX(board [4][4]int) [4][4]int {
 	var l = List{}
-	//var t = List{}
 	l = fillHeads(l)
-	//printList(l)
 	printListToFile(l, "output.txt")
 	t := createT()
 	printListToFile(t, "output2.txt")
 	doRestrict(board, l, t)
+	printListToFile(l, "output3.txt")
 	return [4][4]int{}
 }
 
@@ -56,6 +55,28 @@ func doRestrict(board [4][4]int, l, t List) {
 			}
 		}
 	}
+	solveSudoku(l, t)
+}
+
+func solveSudoku(l, t List) {
+
+	listInCols1 := findInCols1(l)
+	fmt.Println(listInCols1)
+}
+
+func findInCols1(l List) []int {
+	var listInCols1 []int = make([]int, 0)
+	colMain := l.head.nextRight
+	for i := 1; i <= 64; i++ {
+		if colMain.nextDown != nil && colMain.nextDown.nextDown == nil {
+			listInCols1 = append(listInCols1, i)
+		}
+		if i < 64 {
+			colMain = colMain.nextRight
+		}
+	}
+
+	return listInCols1
 }
 
 func findRemove(row, col int, board [4][4]int) []int {
@@ -72,7 +93,32 @@ func findRemove(row, col int, board [4][4]int) []int {
 }
 
 func doCowerRows(l List, numsRowRemove []int) List {
+	for _, numRow := range numsRowRemove {
+		rowCower := l.head
+		for rowCower.row != numRow {
+			rowCower = rowCower.nextDown
+		}
+		for {
+			if rowCower.nextDown == nil {
+				//rowCower.nextUp.nextDown = nil
+				upCell := rowCower.nextUp
+				upCell.nextDown = nil
+			} else {
+				//rowCower.nextUp.nextDown = rowCower.nextDown
+				//rowCower.nextDown.nextUp = rowCower.nextUp
+				upCell := rowCower.nextUp
+				downCell := rowCower.nextDown
+				upCell.nextDown = downCell
+				downCell.nextUp = upCell
+			}
 
+			if rowCower.nextRight != nil {
+				rowCower = rowCower.nextRight
+			} else {
+				break
+			}
+		}
+	}
 	return l
 }
 
