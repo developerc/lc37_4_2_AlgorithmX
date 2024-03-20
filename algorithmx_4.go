@@ -21,7 +21,14 @@ type List struct { //список с узлами
 }
 
 func main() {
-	board := [4][4]int{}
+	board := [4][4]int{} //board[row][col]
+	board[0][3] = 3
+	board[1][0] = 4
+	board[2][1] = 1
+	board[2][2] = 3
+	board[3][0] = 3
+	board[3][2] = 2
+	fmt.Println(board)
 	SolveAlgX(board)
 }
 
@@ -30,8 +37,57 @@ func SolveAlgX(board [4][4]int) [4][4]int {
 	//var t = List{}
 	l = fillHeads(l)
 	//printList(l)
-	printListToFile(l)
+	printListToFile(l, "output.txt")
+	t := createT()
+	printListToFile(t, "output2.txt")
+	doRestrict(board, l, t)
 	return [4][4]int{}
+}
+
+func doRestrict(board [4][4]int, l, t List) {
+	for row := 0; row < 4; row++ {
+		for col := 0; col < 4; col++ {
+			if board[row][col] != 0 {
+				//numRowTableRestr := 4*row + 2*col + board[row][col] //нашли какая строка должна остаться
+				fmt.Println(row, col)
+				numsRowRemove := findRemove(row, col, board)
+				fmt.Println(numsRowRemove)
+				l = doCowerRows(l, numsRowRemove) //сделаем накрытие строки numRowRemove
+			}
+		}
+	}
+}
+
+func findRemove(row, col int, board [4][4]int) []int {
+	var numsRowRemove []int = make([]int, 0)
+	numRowTableRestr := 16*row + 4*col + board[row][col] //нашли какая строка должна остаться
+	fmt.Println(numRowTableRestr)
+	jumpToStart := 16*row + 4*col
+	for i := 1; i <= 4; i++ {
+		if i+jumpToStart != numRowTableRestr {
+			numsRowRemove = append(numsRowRemove, i+jumpToStart)
+		}
+	}
+	return numsRowRemove
+}
+
+func doCowerRows(l List, numsRowRemove []int) List {
+
+	return l
+}
+
+func createT() List {
+	t := List{}
+	headList := &Node{data: 1, col: 0, row: 0}
+	t.head = headList
+	currNode := t.head
+	for i := 1; i <= 64; i++ {
+		newNodeCol := &Node{data: 1, col: i, row: 0}
+		currNode.nextRight = newNodeCol
+		newNodeCol.nextLeft = currNode
+		currNode = newNodeCol
+	}
+	return t
 }
 
 func fillHeads(l List) List {
@@ -249,10 +305,10 @@ func fillHeads(l List) List {
 	return l
 }
 
-func printListToFile(l List) {
+func printListToFile(l List, fileName string) {
 	currNode := l.head
 	// open output file
-	fo, err := os.Create("output.txt")
+	fo, err := os.Create(fileName)
 	if err != nil {
 		panic(err)
 	}
