@@ -38,8 +38,10 @@ func SolveAlgX(board [4][4]int) [4][4]int {
 	printListToFile(l, "output.txt")
 	t := createT()
 	printListToFile(t, "output2.txt")
-	doRestrict(board, l, t)
-	printListToFile(l, "output3.txt")
+	listRows := checkCol(l, 49)
+	fmt.Println(listRows)
+	//doRestrict(board, l, t)
+	//printListToFile(l, "output3.txt")
 	return [4][4]int{}
 }
 
@@ -49,9 +51,9 @@ func doRestrict(board [4][4]int, l, t List) {
 			if board[row][col] != 0 {
 				//numRowTableRestr := 4*row + 2*col + board[row][col] //нашли какая строка должна остаться
 				fmt.Println(row, col)
-				numsRowRemove := findRemove(row, col, board)
-				fmt.Println(numsRowRemove)
-				l = doCowerRows(l, numsRowRemove) //сделаем накрытие строки numRowRemove
+				//numsRowRemove := findRemove(row, col, board)
+				//fmt.Println(numsRowRemove)
+				//l = doCowerRows(l, numsRowRemove) //сделаем накрытие строки numRowRemove
 			}
 		}
 	}
@@ -60,8 +62,35 @@ func doRestrict(board [4][4]int, l, t List) {
 
 func solveSudoku(l, t List) {
 
-	listInCols1 := findInCols1(l)
+	/*listInCols1 := findInCols1(l)
 	fmt.Println(listInCols1)
+	listRows := checkCol(l, 61)
+	fmt.Println(listRows)*/
+}
+
+func checkCol(l List, col int) []int {
+	var listInCols1 []int = make([]int, 0)
+	colMain := l.head
+	for i := 0; i < 64; i++ {
+		if colMain.nextRight != nil {
+			colMain = colMain.nextRight
+		}
+		if colMain.col == col {
+			fmt.Println(colMain.col)
+			for {
+				listInCols1 = append(listInCols1, colMain.row)
+				if colMain.nextDown != nil {
+					colMain = colMain.nextDown
+				} else {
+					break
+				}
+
+			}
+
+			break
+		}
+	}
+	return listInCols1
 }
 
 func findInCols1(l List) []int {
@@ -270,7 +299,7 @@ func fillHeads(l List) List {
 	//--- Заполняем ограничения в боксах
 	rc = 49
 	rr = 1
-	wg.Add(16)
+	//wg.Add(16)
 	for irs := 0; irs < 4; irs++ {
 		irb := 0
 		switch irs {
@@ -283,7 +312,8 @@ func fillHeads(l List) List {
 		}
 
 		for ir := 0; ir < 4; ir++ {
-			go func(row, col int) {
+			fillBoxes(rr+ir+irb, rc+4*ir+irs, l)
+			/*go func(row, col int) {
 				currNodeDown := l.head
 				currNodeRight := l.head
 
@@ -335,20 +365,77 @@ func fillHeads(l List) List {
 							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
 							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
 							newNode.nextUp = currNodeRight
-							/*currNodeRight.nextDown = newNode
-							for j := 0; j < 4; j++ {
-								currNodeDown = currNodeDown.nextDown
-							}*/
 						}
 					}
 
 				}
 				wg.Done()
-			}(rr+ir+irb, rc+4*ir+irs)
+			}(rr+ir+irb, rc+4*ir+irs)*/
 		}
 	}
-	wg.Wait()
+	//wg.Wait()
 	return l
+}
+
+func fillBoxes(row, col int, l List) {
+	//go func(row, col int) {
+	currNodeDown := l.head
+	currNodeRight := l.head
+
+	for currNodeDown.row != row { //опускаемся на нужную строку
+		currNodeDown = currNodeDown.nextDown
+	}
+	for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+		currNodeRight = currNodeRight.nextRight
+	}
+
+	for i := 0; i < 4; i++ {
+		switch i {
+		case 0:
+			{
+				newNode := &Node{data: 1, col: col, row: row}
+				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+				newNode.nextUp = currNodeRight
+				currNodeRight.nextDown = newNode
+				for j := 0; j < 4; j++ {
+					currNodeDown = currNodeDown.nextDown
+				}
+			}
+		case 1:
+			{
+				newNode := &Node{data: 1, col: col, row: row + 4}
+				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+				newNode.nextUp = currNodeRight
+				currNodeRight.nextDown = newNode
+				for j := 0; j < 12; j++ {
+					currNodeDown = currNodeDown.nextDown
+				}
+			}
+		case 2:
+			{
+				newNode := &Node{data: 1, col: col, row: row + 16}
+				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+				newNode.nextUp = currNodeRight
+				currNodeRight.nextDown = newNode
+				for j := 0; j < 4; j++ {
+					currNodeDown = currNodeDown.nextDown
+				}
+			}
+		case 3:
+			{
+				newNode := &Node{data: 1, col: col, row: row + 20}
+				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+				newNode.nextUp = currNodeRight
+			}
+		}
+
+	}
+	//wg.Done()
+	//}(rr+ir+irb, rc+4*ir+irs)
 }
 
 func printListToFile(l List, fileName string) {
