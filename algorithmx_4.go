@@ -38,7 +38,7 @@ func SolveAlgX(board [4][4]int) [4][4]int {
 	printListToFile(l, "output.txt")
 	t := createT()
 	printListToFile(t, "output2.txt")
-	listRows := checkCol(l, 49)
+	listRows := checkCol(l, 52)
 	fmt.Println(listRows)
 	//doRestrict(board, l, t)
 	//printListToFile(l, "output3.txt")
@@ -296,83 +296,174 @@ func fillHeads(l List) List {
 		}
 	}
 	wg.Wait()
-	//--- Заполняем ограничения в боксах
+	//--- Заполняем ограничения в боксах Доделать!!!!!!!!
 	rc = 49
 	rr = 1
-	//wg.Add(16)
-	for irs := 0; irs < 4; irs++ {
-		irb := 0
-		switch irs {
-		case 1:
-			irb = 8
-		case 2:
-			irb = 32
-		case 3:
-			irb = 40
-		}
+	go func(row, col int) {
+		currNodeDown := l.head
+		currNodeRight1 := l.head
+		currNodeRight2 := l.head
+		currNodeRight3 := l.head
+		currNodeRight4 := l.head
+		wg.Add(5)
+		go func() {
+			for i := 0; i < row; i++ {
+				currNodeDown = currNodeDown.nextDown
+			}
+			wg.Done()
+		}()
+		go func() {
+			for i := 0; i < col; i++ {
+				currNodeRight1 = currNodeRight1.nextRight
+			}
+			for currNodeRight1.nextDown != nil {
+				currNodeRight1 = currNodeRight1.nextDown
+			}
+			wg.Done()
+		}()
+		go func() {
+			for i := 0; i < col+1; i++ {
+				currNodeRight2 = currNodeRight2.nextRight
+			}
+			for currNodeRight2.nextDown != nil {
+				currNodeRight2 = currNodeRight2.nextDown
+			}
+			wg.Done()
+		}()
+		go func() {
+			for i := 0; i < col+2; i++ {
+				currNodeRight3 = currNodeRight3.nextRight
+			}
+			for currNodeRight3.nextDown != nil {
+				currNodeRight3 = currNodeRight3.nextDown
+			}
+			wg.Done()
+		}()
+		go func() {
+			for i := 0; i < col+3; i++ {
+				currNodeRight4 = currNodeRight4.nextRight
+			}
+			for currNodeRight4.nextDown != nil {
+				currNodeRight4 = currNodeRight4.nextDown
+			}
+			wg.Done()
+		}()
+		wg.Wait() //поставили заголовочные ноды на места
 
-		for ir := 0; ir < 4; ir++ {
-			fillBoxes(rr+ir+irb, rc+4*ir+irs, l)
-			/*go func(row, col int) {
-				currNodeDown := l.head
-				currNodeRight := l.head
-
-				for currNodeDown.row != row { //опускаемся на нужную строку
+		irb := []int{0, 8, 32, 40}
+		for irs := 0; irs < 4; irs++ {
+			/*irb := 0
+			switch irs {
+			case 1:
+				irb = 8
+			case 2:
+				irb = 32
+			case 3:
+				irb = 40
+			}*/
+			newNode := &Node{data: 1, col: col + irs, row: row + irb[irs]}
+			currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode
+			switch irs {
+			case 0:
+				currNodeRight1.nextDown = newNode
+				newNode.nextUp = currNodeRight1
+				currNodeRight1 = newNode
+			case 1:
+				currNodeRight2.nextDown = newNode
+				newNode.nextUp = currNodeRight2
+				currNodeRight2 = newNode
+			case 2:
+				currNodeRight3.nextDown = newNode
+				newNode.nextUp = currNodeRight3
+				currNodeRight3 = newNode
+			case 3:
+				currNodeRight4.nextDown = newNode
+				newNode.nextUp = currNodeRight4
+				currNodeRight4 = newNode
+			}
+			if irs < 3 {
+				for i := 0; i < irb[irs+1]-irb[irs]; i++ {
 					currNodeDown = currNodeDown.nextDown
 				}
-				for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
-					currNodeRight = currNodeRight.nextRight
-				}
+			}
 
-				for i := 0; i < 4; i++ {
-					switch i {
-					case 0:
-						{
-							newNode := &Node{data: 1, col: col, row: row}
-							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-							newNode.nextUp = currNodeRight
-							currNodeRight.nextDown = newNode
-							for j := 0; j < 4; j++ {
-								currNodeDown = currNodeDown.nextDown
-							}
-						}
-					case 1:
-						{
-							newNode := &Node{data: 1, col: col, row: row + 4}
-							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-							newNode.nextUp = currNodeRight
-							currNodeRight.nextDown = newNode
-							for j := 0; j < 12; j++ {
-								currNodeDown = currNodeDown.nextDown
-							}
-						}
-					case 2:
-						{
-							newNode := &Node{data: 1, col: col, row: row + 16}
-							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-							newNode.nextUp = currNodeRight
-							currNodeRight.nextDown = newNode
-							for j := 0; j < 4; j++ {
-								currNodeDown = currNodeDown.nextDown
-							}
-						}
-					case 3:
-						{
-							newNode := &Node{data: 1, col: col, row: row + 20}
-							currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-							newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-							newNode.nextUp = currNodeRight
-						}
-					}
-
-				}
-				wg.Done()
-			}(rr+ir+irb, rc+4*ir+irs)*/
 		}
+	}(rr, rc)
+
+	//wg.Add(16)
+	/*for irs := 0; irs < 4; irs++ {
+	irb := 0
+	switch irs {
+	case 1:
+		irb = 8
+	case 2:
+		irb = 32
+	case 3:
+		irb = 40
 	}
+
+	for ir := 0; ir < 4; ir++ {
+		fillBoxes(rr+ir+irb, rc+4*ir+irs, l)*/
+	/*go func(row, col int) {
+		currNodeDown := l.head
+		currNodeRight := l.head
+
+		for currNodeDown.row != row { //опускаемся на нужную строку
+			currNodeDown = currNodeDown.nextDown
+		}
+		for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+			currNodeRight = currNodeRight.nextRight
+		}
+
+		for i := 0; i < 4; i++ {
+			switch i {
+			case 0:
+				{
+					newNode := &Node{data: 1, col: col, row: row}
+					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+					newNode.nextUp = currNodeRight
+					currNodeRight.nextDown = newNode
+					for j := 0; j < 4; j++ {
+						currNodeDown = currNodeDown.nextDown
+					}
+				}
+			case 1:
+				{
+					newNode := &Node{data: 1, col: col, row: row + 4}
+					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+					newNode.nextUp = currNodeRight
+					currNodeRight.nextDown = newNode
+					for j := 0; j < 12; j++ {
+						currNodeDown = currNodeDown.nextDown
+					}
+				}
+			case 2:
+				{
+					newNode := &Node{data: 1, col: col, row: row + 16}
+					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+					newNode.nextUp = currNodeRight
+					currNodeRight.nextDown = newNode
+					for j := 0; j < 4; j++ {
+						currNodeDown = currNodeDown.nextDown
+					}
+				}
+			case 3:
+				{
+					newNode := &Node{data: 1, col: col, row: row + 20}
+					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
+					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
+					newNode.nextUp = currNodeRight
+				}
+			}
+
+		}
+		wg.Done()
+	}(rr+ir+irb, rc+4*ir+irs)*/
+	//}
+	//}
 	//wg.Wait()
 	return l
 }
