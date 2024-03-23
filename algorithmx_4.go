@@ -38,10 +38,10 @@ func SolveAlgX(board [4][4]int) [4][4]int {
 	printListToFile(l, "output.txt")
 	t := createT()
 	printListToFile(t, "output2.txt")
-	listRows := checkCol(l, 64)
-	fmt.Println(listRows)
-	//doRestrict(board, l, t)
-	//printListToFile(l, "output3.txt")
+	//listRows := checkCol(l, 64)
+	//fmt.Println(listRows)
+	doRestrict(board, l, t)
+	printListToFile(l, "output3.txt")
 	return [4][4]int{}
 }
 
@@ -49,23 +49,95 @@ func doRestrict(board [4][4]int, l, t List) {
 	for row := 0; row < 4; row++ {
 		for col := 0; col < 4; col++ {
 			if board[row][col] != 0 {
-				//numRowTableRestr := 4*row + 2*col + board[row][col] //нашли какая строка должна остаться
 				fmt.Println(row, col)
-				//numsRowRemove := findRemove(row, col, board)
-				//fmt.Println(numsRowRemove)
-				//l = doCowerRows(l, numsRowRemove) //сделаем накрытие строки numRowRemove
+				numsRowRemove := findRemove(row, col, board)
+				fmt.Println(numsRowRemove)
+				l = doCowerRows(l, numsRowRemove) //сделаем накрытие строки numRowRemove
 			}
 		}
 	}
-	solveSudoku(l, t)
+	listInCols1 := findInCols1(l)
+	listInCols1 = listInCols1[0:]
+	fmt.Println(listInCols1)
+	solveSudoku(l, t, listInCols1)
 }
 
-func solveSudoku(l, t List) {
+func solveSudoku(l, t List, listInCols1 []int) {
+	var numRowWithOne int //номер строки с одной единицей в столбце
+	var arrColsOne []int
+	if len(listInCols1) > 0 {
+		numRowWithOne, arrColsOne = findNumRowWithOne(l, listInCols1[0])
+		fmt.Println(numRowWithOne)
+	}
+	t = addToTableProbableSolution(numRowWithOne, l, t)
+	printListToFile(t, "output4.txt")
+	fmt.Println(arrColsOne)
+	//listRows := checkCol(l, 61)
+	//fmt.Println(listRows)
+}
 
-	/*listInCols1 := findInCols1(l)
-	fmt.Println(listInCols1)
-	listRows := checkCol(l, 61)
-	fmt.Println(listRows)*/
+func addToTableProbableSolution(numRowWithOne int, l, t List) List { //будем добавлять строку в таблицу возможных ответов
+	rowMainL := l.head
+	for rowMainL.row != numRowWithOne {
+		rowMainL = rowMainL.nextDown
+	}
+	rowMainT := t.head
+	for rowMainT.nextDown != nil {
+		rowMainT = rowMainT.nextDown
+	}
+	newNodeCol := &Node{data: 1, col: 0, row: numRowWithOne}
+	rowMainT.nextDown = newNodeCol
+	newNodeCol.nextUp = rowMainT
+	for rowMainL.nextRight != nil {
+		rowMainL = rowMainL.nextRight
+		addNode(t, rowMainL.col, rowMainL.row)
+	}
+	return t
+}
+
+func addNode(l List, col, row int) List {
+	currNodeDown := l.head
+	currNodeRight := l.head
+	newNode := &Node{data: 1, col: col, row: row}
+	for currNodeDown.row != row { //опускаемся на нужную строку
+		currNodeDown = currNodeDown.nextDown
+	}
+	for currNodeDown.nextRight != nil { //в этой строке передвигаемся в крайнее правое положение
+		currNodeDown = currNodeDown.nextRight
+	}
+	currNodeDown.nextRight = newNode //привязываемся к новой ноде справа
+	newNode.nextLeft = currNodeDown
+
+	for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
+		currNodeRight = currNodeRight.nextRight
+	}
+	for currNodeRight.nextDown != nil { //передвигаемся в столбце в крайнее нижнее положение
+		currNodeRight = currNodeRight.nextDown
+	}
+
+	newNode.nextUp = currNodeRight
+	currNodeRight.nextDown = newNode
+	return l
+}
+
+func findNumRowWithOne(l List, colNum int) (int, []int) { //находим номер строки где в столбце одна единица и список столбцов с единицами для закрытия
+	var numRowOne int
+	var arrColsOne []int = make([]int, 0)
+	colMain := l.head
+	for colMain.col != colNum {
+		colMain = colMain.nextRight
+	}
+	colMain = colMain.nextDown
+	numRowOne = colMain.row
+	//составим список столбцов с единицами
+	for colMain.nextLeft != nil {
+		colMain = colMain.nextLeft
+	}
+	for colMain.nextRight != nil {
+		colMain = colMain.nextRight
+		arrColsOne = append(arrColsOne, colMain.col)
+	}
+	return numRowOne, arrColsOne
 }
 
 func checkCol(l List, col int) []int {
