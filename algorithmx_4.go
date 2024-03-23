@@ -38,7 +38,7 @@ func SolveAlgX(board [4][4]int) [4][4]int {
 	printListToFile(l, "output.txt")
 	t := createT()
 	printListToFile(t, "output2.txt")
-	listRows := checkCol(l, 52)
+	listRows := checkCol(l, 64)
 	fmt.Println(listRows)
 	//doRestrict(board, l, t)
 	//printListToFile(l, "output3.txt")
@@ -299,7 +299,45 @@ func fillHeads(l List) List {
 	//--- Заполняем ограничения в боксах Доделать!!!!!!!!
 	rc = 49
 	rr = 1
-	go func(row, col int) {
+
+	for inb := 0; inb < 4; inb++ {
+
+		irbc := []int{0, 8, 32, 40}
+		wg.Add(4)
+		for ir := 0; ir < 4; ir++ {
+			go func(row, col int) {
+				currNodeDown := l.head
+				currNodeRight := l.head
+				for i := 0; i < row; i++ {
+					currNodeDown = currNodeDown.nextDown
+				}
+				for i := 0; i < col; i++ {
+					currNodeRight = currNodeRight.nextRight
+				} //поставили заголовочные ноды на места
+
+				irb := []int{0, 4, 16, 20}
+				for irs := 0; irs < 4; irs++ {
+					newNode := &Node{data: 1, col: col, row: row + irb[irs]}
+					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode
+
+					currNodeRight.nextDown = newNode
+					newNode.nextUp = currNodeRight
+					currNodeRight = newNode
+
+					if irs < 3 {
+						for i := 0; i < irb[irs+1]-irb[irs]; i++ {
+							currNodeDown = currNodeDown.nextDown
+						}
+					}
+				}
+				wg.Done()
+			}(rr+irbc[ir], rc+ir)
+		}
+		wg.Wait()
+		rc += 4
+		rr += 1
+	}
+	/*go func(row, col int) {
 		currNodeDown := l.head
 		currNodeRight1 := l.head
 		currNodeRight2 := l.head
@@ -351,44 +389,46 @@ func fillHeads(l List) List {
 		wg.Wait() //поставили заголовочные ноды на места
 
 		irb := []int{0, 8, 32, 40}
-		for irs := 0; irs < 4; irs++ {
-			/*irb := 0
-			switch irs {
-			case 1:
-				irb = 8
-			case 2:
-				irb = 32
-			case 3:
-				irb = 40
-			}*/
-			newNode := &Node{data: 1, col: col + irs, row: row + irb[irs]}
-			currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode
-			switch irs {
-			case 0:
-				currNodeRight1.nextDown = newNode
-				newNode.nextUp = currNodeRight1
-				currNodeRight1 = newNode
-			case 1:
-				currNodeRight2.nextDown = newNode
-				newNode.nextUp = currNodeRight2
-				currNodeRight2 = newNode
-			case 2:
-				currNodeRight3.nextDown = newNode
-				newNode.nextUp = currNodeRight3
-				currNodeRight3 = newNode
-			case 3:
-				currNodeRight4.nextDown = newNode
-				newNode.nextUp = currNodeRight4
-				currNodeRight4 = newNode
-			}
-			if irs < 3 {
-				for i := 0; i < irb[irs+1]-irb[irs]; i++ {
-					currNodeDown = currNodeDown.nextDown
+		//for irt := 0; irt < 2; irt++ {
+		for irk := 0; irk < 2; irk++ {
+			for irs := 0; irs < 4; irs++ {
+				newNode := &Node{data: 1, col: col + irs, row: row + irb[irs]}
+				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode
+				switch irs {
+				case 0:
+					currNodeRight1.nextDown = newNode
+					newNode.nextUp = currNodeRight1
+					currNodeRight1 = newNode
+				case 1:
+					currNodeRight2.nextDown = newNode
+					newNode.nextUp = currNodeRight2
+					currNodeRight2 = newNode
+				case 2:
+					currNodeRight3.nextDown = newNode
+					newNode.nextUp = currNodeRight3
+					currNodeRight3 = newNode
+				case 3:
+					currNodeRight4.nextDown = newNode
+					newNode.nextUp = currNodeRight4
+					currNodeRight4 = newNode
+				}
+				if irs < 3 {
+					for i := 0; i < irb[irs+1]-irb[irs]; i++ {
+						currNodeDown = currNodeDown.nextDown
+					}
 				}
 			}
-
+			for i := 0; i < 36; i++ {
+				currNodeDown = currNodeDown.nextUp
+			}
+			row += 4
 		}
-	}(rr, rc)
+		//	for i := 0; i < 28; i++ {
+		//		currNodeDown = currNodeDown.nextUp
+		//	}
+		//	row += 12
+		//}
+	}(rr, rc)*/
 
 	//wg.Add(16)
 	/*for irs := 0; irs < 4; irs++ {
