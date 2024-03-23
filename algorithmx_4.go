@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"sync"
 )
 
@@ -56,7 +57,7 @@ func doRestrict(board [4][4]int, l, t List) {
 			}
 		}
 	}
-	listInCols1 := findInCols1(l)
+	listInCols1 := findInCols1(l) //составляем список столбцов с одной единицей
 	listInCols1 = listInCols1[0:]
 	fmt.Println(listInCols1)
 	solveSudoku(l, t, listInCols1)
@@ -64,16 +65,54 @@ func doRestrict(board [4][4]int, l, t List) {
 
 func solveSudoku(l, t List, listInCols1 []int) {
 	var numRowWithOne int //номер строки с одной единицей в столбце
-	var arrColsOne []int
+	var arrColsOne []int  //список столбцов в строке где в столбце одна единица
 	if len(listInCols1) > 0 {
 		numRowWithOne, arrColsOne = findNumRowWithOne(l, listInCols1[0])
 		fmt.Println(numRowWithOne)
 	}
-	t = addToTableProbableSolution(numRowWithOne, l, t)
+	t = addToTableProbableSolution(numRowWithOne, l, t) //в таблицу возможных решений добавляем строку
 	printListToFile(t, "output4.txt")
 	fmt.Println(arrColsOne)
+	arrRowsToCover := findArrRowsToCover(arrColsOne, l)
+	fmt.Println(arrRowsToCover)
+	coverRows(arrRowsToCover, l)
 	//listRows := checkCol(l, 61)
 	//fmt.Println(listRows)
+}
+
+func coverRows(arrRowsToCover []int, l List) {
+	if len(arrRowsToCover) == 0 {
+		return
+	}
+	m, uniq := make(map[int]struct{}), make([]int, 0, len(arrRowsToCover))
+	for _, v := range arrRowsToCover {
+		if _, ok := m[v]; !ok {
+			m[v], uniq = struct{}{}, append(uniq, v)
+		}
+	}
+	sort.Ints(uniq)
+	fmt.Println(uniq)
+	// доделать накрытие строк
+}
+
+func findArrRowsToCover(arrColsOne []int, l List) []int {
+	var arrRowsToCover []int = make([]int, 0)
+	colMain := l.head
+	for _, col := range arrColsOne {
+		//fmt.Println(col)
+		for colMain.col != col {
+			colMain = colMain.nextRight
+		}
+		fmt.Println("col for cover: ", col)
+		nodeForCover := colMain.nextDown
+		arrRowsToCover = append(arrRowsToCover, nodeForCover.row)
+		for nodeForCover.nextDown != nil {
+			nodeForCover = nodeForCover.nextDown
+			arrRowsToCover = append(arrRowsToCover, nodeForCover.row)
+		}
+	}
+
+	return arrRowsToCover
 }
 
 func addToTableProbableSolution(numRowWithOne int, l, t List) List { //будем добавлять строку в таблицу возможных ответов
@@ -409,174 +448,7 @@ func fillHeads(l List) List {
 		rc += 4
 		rr += 1
 	}
-	/*go func(row, col int) {
-		currNodeDown := l.head
-		currNodeRight1 := l.head
-		currNodeRight2 := l.head
-		currNodeRight3 := l.head
-		currNodeRight4 := l.head
-		wg.Add(5)
-		go func() {
-			for i := 0; i < row; i++ {
-				currNodeDown = currNodeDown.nextDown
-			}
-			wg.Done()
-		}()
-		go func() {
-			for i := 0; i < col; i++ {
-				currNodeRight1 = currNodeRight1.nextRight
-			}
-			for currNodeRight1.nextDown != nil {
-				currNodeRight1 = currNodeRight1.nextDown
-			}
-			wg.Done()
-		}()
-		go func() {
-			for i := 0; i < col+1; i++ {
-				currNodeRight2 = currNodeRight2.nextRight
-			}
-			for currNodeRight2.nextDown != nil {
-				currNodeRight2 = currNodeRight2.nextDown
-			}
-			wg.Done()
-		}()
-		go func() {
-			for i := 0; i < col+2; i++ {
-				currNodeRight3 = currNodeRight3.nextRight
-			}
-			for currNodeRight3.nextDown != nil {
-				currNodeRight3 = currNodeRight3.nextDown
-			}
-			wg.Done()
-		}()
-		go func() {
-			for i := 0; i < col+3; i++ {
-				currNodeRight4 = currNodeRight4.nextRight
-			}
-			for currNodeRight4.nextDown != nil {
-				currNodeRight4 = currNodeRight4.nextDown
-			}
-			wg.Done()
-		}()
-		wg.Wait() //поставили заголовочные ноды на места
 
-		irb := []int{0, 8, 32, 40}
-		//for irt := 0; irt < 2; irt++ {
-		for irk := 0; irk < 2; irk++ {
-			for irs := 0; irs < 4; irs++ {
-				newNode := &Node{data: 1, col: col + irs, row: row + irb[irs]}
-				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode
-				switch irs {
-				case 0:
-					currNodeRight1.nextDown = newNode
-					newNode.nextUp = currNodeRight1
-					currNodeRight1 = newNode
-				case 1:
-					currNodeRight2.nextDown = newNode
-					newNode.nextUp = currNodeRight2
-					currNodeRight2 = newNode
-				case 2:
-					currNodeRight3.nextDown = newNode
-					newNode.nextUp = currNodeRight3
-					currNodeRight3 = newNode
-				case 3:
-					currNodeRight4.nextDown = newNode
-					newNode.nextUp = currNodeRight4
-					currNodeRight4 = newNode
-				}
-				if irs < 3 {
-					for i := 0; i < irb[irs+1]-irb[irs]; i++ {
-						currNodeDown = currNodeDown.nextDown
-					}
-				}
-			}
-			for i := 0; i < 36; i++ {
-				currNodeDown = currNodeDown.nextUp
-			}
-			row += 4
-		}
-		//	for i := 0; i < 28; i++ {
-		//		currNodeDown = currNodeDown.nextUp
-		//	}
-		//	row += 12
-		//}
-	}(rr, rc)*/
-
-	//wg.Add(16)
-	/*for irs := 0; irs < 4; irs++ {
-	irb := 0
-	switch irs {
-	case 1:
-		irb = 8
-	case 2:
-		irb = 32
-	case 3:
-		irb = 40
-	}
-
-	for ir := 0; ir < 4; ir++ {
-		fillBoxes(rr+ir+irb, rc+4*ir+irs, l)*/
-	/*go func(row, col int) {
-		currNodeDown := l.head
-		currNodeRight := l.head
-
-		for currNodeDown.row != row { //опускаемся на нужную строку
-			currNodeDown = currNodeDown.nextDown
-		}
-		for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
-			currNodeRight = currNodeRight.nextRight
-		}
-
-		for i := 0; i < 4; i++ {
-			switch i {
-			case 0:
-				{
-					newNode := &Node{data: 1, col: col, row: row}
-					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-					newNode.nextUp = currNodeRight
-					currNodeRight.nextDown = newNode
-					for j := 0; j < 4; j++ {
-						currNodeDown = currNodeDown.nextDown
-					}
-				}
-			case 1:
-				{
-					newNode := &Node{data: 1, col: col, row: row + 4}
-					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-					newNode.nextUp = currNodeRight
-					currNodeRight.nextDown = newNode
-					for j := 0; j < 12; j++ {
-						currNodeDown = currNodeDown.nextDown
-					}
-				}
-			case 2:
-				{
-					newNode := &Node{data: 1, col: col, row: row + 16}
-					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-					newNode.nextUp = currNodeRight
-					currNodeRight.nextDown = newNode
-					for j := 0; j < 4; j++ {
-						currNodeDown = currNodeDown.nextDown
-					}
-				}
-			case 3:
-				{
-					newNode := &Node{data: 1, col: col, row: row + 20}
-					currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-					newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-					newNode.nextUp = currNodeRight
-				}
-			}
-
-		}
-		wg.Done()
-	}(rr+ir+irb, rc+4*ir+irs)*/
-	//}
-	//}
-	//wg.Wait()
 	return l
 }
 
@@ -637,8 +509,6 @@ func fillBoxes(row, col int, l List) {
 		}
 
 	}
-	//wg.Done()
-	//}(rr+ir+irb, rc+4*ir+irs)
 }
 
 func printListToFile(l List, fileName string) {
