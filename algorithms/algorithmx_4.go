@@ -1,4 +1,4 @@
-package main
+package algorithms
 
 import (
 	"fmt"
@@ -21,89 +21,169 @@ type List struct { //список с узлами
 	head *Node
 }
 
-func main() {
-	board := [4][4]int{} //board[row][col]
-	board[0][3] = 3
-	board[1][0] = 4
-	board[2][1] = 1
-	board[2][2] = 3
-	board[3][0] = 3
-	board[3][2] = 2
-	fmt.Println(board)
-	SolveAlgX(board)
-}
+//var loops int
 
 func SolveAlgX(board [4][4]int) [4][4]int {
 	var l = List{}
 	l = fillHeads(l)
-	printListToFile(l, "output.txt")
+	//printListToFile(l, "output.txt")
 	t := createT()
-	printListToFile(t, "output2.txt")
-	//listRows := checkCol(l, 64)
-	//fmt.Println(listRows)
+	//printListToFile(t, "output2.txt")
 	doRestrict(board, l, t)
-	printListToFile(l, "output3.txt")
-	return [4][4]int{}
+	//здесь из t извлекаем ответы
+	result := findResultBoard(t)
+	return result
+}
+
+func findResultBoard(t List) [4][4]int {
+	board := [4][4]int{} //board[row][col]
+	var val int
+	var r int
+	var c int
+	rowHead := t.head
+	for rowHead.nextDown != nil {
+		rowHead = rowHead.nextDown
+		//определим значение
+		if rowHead.row%2 == 0 && rowHead.row%4 == 0 {
+			val = 4
+		}
+		if rowHead.row%2 == 0 && rowHead.row%4 != 0 {
+			val = 2
+		}
+		if rowHead.row == 1 {
+			val = 1
+		}
+		if rowHead.row == 3 {
+			val = 3
+		}
+		if rowHead.row != 1 && rowHead.row != 3 && (rowHead.row-1)%2 == 0 && (rowHead.row-1)%4 != 0 {
+			val = 3
+		}
+		if rowHead.row != 1 && rowHead.row != 3 && (rowHead.row-1)%2 == 0 && (rowHead.row-1)%4 == 0 {
+			val = 1
+		}
+		// определим row
+		r = rowHead.row / 16
+		if rowHead.row%16 == 0 {
+			r--
+		}
+		/*if rowHead.row >= 1 && rowHead.row <= 16 {
+			r = 0
+		}
+		if rowHead.row >= 17 && rowHead.row <= 32 {
+			r = 1
+		}
+		if rowHead.row >= 33 && rowHead.row <= 48 {
+			r = 2
+		}
+		if rowHead.row >= 49 && rowHead.row <= 64 {
+			r = 3
+		}*/
+		//определим col
+		if rowHead.row%16 != 0 {
+			var cd int = rowHead.row % 16
+			c = cd / 4
+			if cd%4 == 0 {
+				c--
+			}
+			//fmt.Printf("rowHead.row = %d, cd = %d, r = %d, c = %d, val = %d\n", rowHead.row, cd, r, c, val)
+		} else {
+			c = 3
+		}
+		board[r][c] = val
+	}
+
+	return board
 }
 
 func doRestrict(board [4][4]int, l, t List) {
 	for row := 0; row < 4; row++ {
 		for col := 0; col < 4; col++ {
 			if board[row][col] != 0 {
-				fmt.Println(row, col)
+				//fmt.Println(row, col)
 				numsRowRemove := findRemove(row, col, board)
-				fmt.Println(numsRowRemove)
+				//fmt.Println(numsRowRemove)
 				l = doCowerRows(l, numsRowRemove) //сделаем накрытие строки numRowRemove
 			}
 		}
 	}
-	listInCols1 := findInCols1(l) //составляем список столбцов с одной единицей
-	listInCols1 = listInCols1[0:]
-	fmt.Println(listInCols1)
-	solveSudoku(l, t, listInCols1)
+	solveSudoku(l, t)
 }
 
-func solveSudoku(l, t List, listInCols1 []int) {
-	var numRowWithOne int //номер строки с одной единицей в столбце
-	var arrColsOne []int  //список столбцов в строке где в столбце одна единица
+func solveSudoku(l, t List) {
+	/*if loops > 1 {
+		return
+	}*/
+	if listIsEmpty(l) {
+		return
+	}
+	var numRowWithOne int         //номер строки с одной единицей в столбце
+	var arrColsOne []int          //список столбцов в строке где в столбце одна единица
+	listInCols1 := findInCols1(l) //составляем список столбцов с одной единицей
+	listInCols1 = listInCols1[0:]
 	if len(listInCols1) > 0 {
 		numRowWithOne, arrColsOne = findNumRowWithOne(l, listInCols1[0])
-		fmt.Println(numRowWithOne)
+		//fmt.Println(numRowWithOne)
 	}
 	t = addToTableProbableSolution(numRowWithOne, l, t) //в таблицу возможных решений добавляем строку
-	printListToFile(t, "output4.txt")
-	fmt.Println(arrColsOne)
+	//printListToFile(t, "output4.txt")
+	//fmt.Println(arrColsOne)
 	arrRowsToCover := findArrRowsToCover(arrColsOne, l)
-	fmt.Println(arrRowsToCover)
+	//fmt.Println(arrRowsToCover)
 	coverRows(arrRowsToCover, l)
-	//listRows := checkCol(l, 61)
-	//fmt.Println(listRows)
+	//printListToFile(l, "output5.txt")
+	//loops++
+	solveSudoku(l, t)
+}
+
+func listIsEmpty(l List) bool {
+	return l.head.nextDown == l.head
 }
 
 func coverRows(arrRowsToCover []int, l List) {
 	if len(arrRowsToCover) == 0 {
 		return
 	}
-	m, uniq := make(map[int]struct{}), make([]int, 0, len(arrRowsToCover))
+	m, uniq := make(map[int]struct{}), make([]int, 0, len(arrRowsToCover)) //убираем повторяющиеся номера
 	for _, v := range arrRowsToCover {
 		if _, ok := m[v]; !ok {
 			m[v], uniq = struct{}{}, append(uniq, v)
 		}
 	}
 	sort.Ints(uniq)
-	fmt.Println(uniq)
-	// доделать накрытие строк
+	//fmt.Println(uniq)
+	// делаем накрытие строк
+	rowCower := l.head
+	for i := 0; i < len(uniq); i++ {
+		for rowCower.row != uniq[i] {
+			rowCower = rowCower.nextDown
+		}
+		rowTemp := rowCower
+		for {
+			if rowTemp.nextDown == nil {
+				rowTemp.nextUp.nextDown = nil
+			} else {
+				rowTemp.nextUp.nextDown = rowTemp.nextDown
+				rowTemp.nextDown.nextUp = rowTemp.nextUp
+			}
+
+			if rowTemp.nextRight != nil {
+				rowTemp = rowTemp.nextRight
+			} else {
+				break
+			}
+		}
+	}
 }
 
 func findArrRowsToCover(arrColsOne []int, l List) []int {
 	var arrRowsToCover []int = make([]int, 0)
 	colMain := l.head
 	for _, col := range arrColsOne {
-		//fmt.Println(col)
 		for colMain.col != col {
 			colMain = colMain.nextRight
 		}
-		fmt.Println("col for cover: ", col)
+		//fmt.Println("col for cover: ", col)
 		nodeForCover := colMain.nextDown
 		arrRowsToCover = append(arrRowsToCover, nodeForCover.row)
 		for nodeForCover.nextDown != nil {
@@ -111,7 +191,6 @@ func findArrRowsToCover(arrColsOne []int, l List) []int {
 			arrRowsToCover = append(arrRowsToCover, nodeForCover.row)
 		}
 	}
-
 	return arrRowsToCover
 }
 
@@ -153,7 +232,6 @@ func addNode(l List, col, row int) List {
 	for currNodeRight.nextDown != nil { //передвигаемся в столбце в крайнее нижнее положение
 		currNodeRight = currNodeRight.nextDown
 	}
-
 	newNode.nextUp = currNodeRight
 	currNodeRight.nextDown = newNode
 	return l
@@ -179,31 +257,6 @@ func findNumRowWithOne(l List, colNum int) (int, []int) { //находим но�
 	return numRowOne, arrColsOne
 }
 
-func checkCol(l List, col int) []int {
-	var listInCols1 []int = make([]int, 0)
-	colMain := l.head
-	for i := 0; i < 64; i++ {
-		if colMain.nextRight != nil {
-			colMain = colMain.nextRight
-		}
-		if colMain.col == col {
-			fmt.Println(colMain.col)
-			for {
-				listInCols1 = append(listInCols1, colMain.row)
-				if colMain.nextDown != nil {
-					colMain = colMain.nextDown
-				} else {
-					break
-				}
-
-			}
-
-			break
-		}
-	}
-	return listInCols1
-}
-
 func findInCols1(l List) []int {
 	var listInCols1 []int = make([]int, 0)
 	colMain := l.head.nextRight
@@ -215,14 +268,13 @@ func findInCols1(l List) []int {
 			colMain = colMain.nextRight
 		}
 	}
-
 	return listInCols1
 }
 
 func findRemove(row, col int, board [4][4]int) []int {
 	var numsRowRemove []int = make([]int, 0)
 	numRowTableRestr := 16*row + 4*col + board[row][col] //нашли какая строка должна остаться
-	fmt.Println(numRowTableRestr)
+	//fmt.Println(numRowTableRestr)
 	jumpToStart := 16*row + 4*col
 	for i := 1; i <= 4; i++ {
 		if i+jumpToStart != numRowTableRestr {
@@ -240,16 +292,10 @@ func doCowerRows(l List, numsRowRemove []int) List {
 		}
 		for {
 			if rowCower.nextDown == nil {
-				//rowCower.nextUp.nextDown = nil
-				upCell := rowCower.nextUp
-				upCell.nextDown = nil
+				rowCower.nextUp.nextDown = nil
 			} else {
-				//rowCower.nextUp.nextDown = rowCower.nextDown
-				//rowCower.nextDown.nextUp = rowCower.nextUp
-				upCell := rowCower.nextUp
-				downCell := rowCower.nextDown
-				upCell.nextDown = downCell
-				downCell.nextUp = upCell
+				rowCower.nextUp.nextDown = rowCower.nextDown
+				rowCower.nextDown.nextUp = rowCower.nextUp
 			}
 
 			if rowCower.nextRight != nil {
@@ -452,84 +498,22 @@ func fillHeads(l List) List {
 	return l
 }
 
-func fillBoxes(row, col int, l List) {
-	//go func(row, col int) {
-	currNodeDown := l.head
-	currNodeRight := l.head
-
-	for currNodeDown.row != row { //опускаемся на нужную строку
-		currNodeDown = currNodeDown.nextDown
-	}
-	for i := 0; i < col; i++ { //передвигаемся вправо на нужный столбец
-		currNodeRight = currNodeRight.nextRight
-	}
-
-	for i := 0; i < 4; i++ {
-		switch i {
-		case 0:
-			{
-				newNode := &Node{data: 1, col: col, row: row}
-				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-				newNode.nextUp = currNodeRight
-				currNodeRight.nextDown = newNode
-				for j := 0; j < 4; j++ {
-					currNodeDown = currNodeDown.nextDown
-				}
-			}
-		case 1:
-			{
-				newNode := &Node{data: 1, col: col, row: row + 4}
-				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-				newNode.nextUp = currNodeRight
-				currNodeRight.nextDown = newNode
-				for j := 0; j < 12; j++ {
-					currNodeDown = currNodeDown.nextDown
-				}
-			}
-		case 2:
-			{
-				newNode := &Node{data: 1, col: col, row: row + 16}
-				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-				newNode.nextUp = currNodeRight
-				currNodeRight.nextDown = newNode
-				for j := 0; j < 4; j++ {
-					currNodeDown = currNodeDown.nextDown
-				}
-			}
-		case 3:
-			{
-				newNode := &Node{data: 1, col: col, row: row + 20}
-				currNodeDown.nextRight.nextRight.nextRight.nextRight = newNode //привязываемся к новой ноде справа
-				newNode.nextLeft = currNodeDown.nextRight.nextRight.nextRight
-				newNode.nextUp = currNodeRight
-			}
-		}
-
-	}
-}
-
 func printListToFile(l List, fileName string) {
 	currNode := l.head
-	// open output file
-	fo, err := os.Create(fileName)
+	fo, err := os.Create(fileName) // open output file
 	if err != nil {
 		panic(err)
 	}
-	// close fo on exit and check for its returned error
-	defer fo.Close()
+	defer fo.Close() // close fo on exit and check for its returned error
 
 	for i := 0; i <= 64; i++ {
-		//fmt.Printf("%d\t", currNode.col)
 		_, err = fo.WriteString(fmt.Sprintf("%d\t", i)) // writing...
 		if err != nil {
 			fmt.Printf("error writing string: %v", err)
 		}
 		currNode = currNode.nextRight
 	}
-	_, err = fo.WriteString(fmt.Sprintf("\n")) // writing...
+	_, err = fo.WriteString("\n") // writing...
 	if err != nil {
 		fmt.Printf("error writing string: %v", err)
 	}
@@ -539,7 +523,6 @@ func printListToFile(l List, fileName string) {
 		if currNode == nil {
 			break
 		}
-		//fmt.Printf("%d", currNode.row) //заголовок строки
 		_, err = fo.WriteString(fmt.Sprintf("%d", currNode.row)) // writing...
 		if err != nil {
 			fmt.Printf("error writing string: %v", err)
@@ -549,33 +532,21 @@ func printListToFile(l List, fileName string) {
 		for currNodeRow.nextRight != nil {
 			amountTabs = currNodeRow.nextRight.col - currNodeRow.col
 			for k := 0; k < amountTabs; k++ {
-				//fmt.Printf("\t")
-				_, err = fo.WriteString(fmt.Sprintf("\t")) // writing...
+				_, err = fo.WriteString("\t") // writing...
 				if err != nil {
 					fmt.Printf("error writing string: %v", err)
 				}
 			}
-			//fmt.Printf("1")
-			_, err = fo.WriteString(fmt.Sprintf("1")) // writing...
+			_, err = fo.WriteString("1") // writing...
 			if err != nil {
 				fmt.Printf("error writing string: %v", err)
 			}
 			currNodeRow = currNodeRow.nextRight
 		}
-		//fmt.Printf("\n")
-		_, err = fo.WriteString(fmt.Sprintf("\n")) // writing...
+		_, err = fo.WriteString("\n") // writing...
 		if err != nil {
 			fmt.Printf("error writing string: %v", err)
 		}
 		currNode = currNode.nextDown
 	}
-}
-
-func printList(l List) {
-	currNode := l.head
-	for i := 0; i <= 64; i++ {
-		fmt.Printf("%d\t", currNode.col)
-		currNode = currNode.nextRight
-	}
-	fmt.Printf("\n") //распечатали заголовки столбцов
 }
