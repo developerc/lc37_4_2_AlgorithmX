@@ -77,3 +77,8 @@ func isBoardValid(board [4][4]int) bool {
 
 	return true
 }
+
+func hasDuplicates([10]int) bool {
+
+	return true
+}
