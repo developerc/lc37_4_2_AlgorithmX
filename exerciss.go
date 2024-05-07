@@ -7,6 +7,7 @@ import (
 )
 
 func main() {
+	//-------- AlgorithmX ---------
 	board := [4][4]int{} //board[row][col]
 	board[0][3] = 3
 	board[1][0] = 4
@@ -21,5 +22,17 @@ func main() {
 	dur := after.Sub(before)
 	fmt.Println(answ)
 	fmt.Printf("duration algorithmX %d us\n", dur.Microseconds())
-	//SolveAlgX(board)
+	//-------- DFS ---------
+	board[0][3] = 3
+	board[1][0] = 4
+	board[2][1] = 1
+	board[2][2] = 3
+	board[3][0] = 3
+	board[3][2] = 2
+	before = time.Now()
+	answ = algorithms.SolveDfs(board)
+	after = time.Now()
+	dur = after.Sub(before)
+	fmt.Println(answ)
+	fmt.Printf("duration DFS %d us\n", dur.Microseconds())
 }

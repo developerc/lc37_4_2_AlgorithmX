@@ -1,6 +1,11 @@
 package algorithms
 
-func backtrack(board [4][4]int) bool {
+func SolveDfs(board [4][4]int) [4][4]int {
+	backtrack(&board)
+	return board
+}
+
+func backtrack(board *[4][4]int) bool {
 	if !hasEmptyCell(board) {
 		return true
 	}
@@ -25,7 +30,7 @@ func backtrack(board [4][4]int) bool {
 	return false
 }
 
-func hasEmptyCell(board [4][4]int) bool {
+func hasEmptyCell(board *[4][4]int) bool {
 	for i := 0; i < 4; i++ {
 		for j := 0; j < 4; j++ {
 			if board[i][j] == 0 {
@@ -36,12 +41,12 @@ func hasEmptyCell(board [4][4]int) bool {
 	return false
 }
 
-func isBoardValid(board [4][4]int) bool {
+func isBoardValid(board *[4][4]int) bool {
 
 	//check duplicates by row
-	for row := 0; row < 9; row++ {
-		counter := [10]int{}
-		for col := 0; col < 9; col++ {
+	for row := 0; row < 4; row++ {
+		counter := [5]int{}
+		for col := 0; col < 4; col++ {
 			counter[board[row][col]]++
 		}
 		if hasDuplicates(counter) {
@@ -50,9 +55,9 @@ func isBoardValid(board [4][4]int) bool {
 	}
 
 	//check duplicates by column
-	for row := 0; row < 9; row++ {
-		counter := [10]int{}
-		for col := 0; col < 9; col++ {
+	for row := 0; row < 4; row++ {
+		counter := [5]int{}
+		for col := 0; col < 4; col++ {
 			counter[board[col][row]]++
 		}
 		if hasDuplicates(counter) {
@@ -60,12 +65,12 @@ func isBoardValid(board [4][4]int) bool {
 		}
 	}
 
-	//check 3x3 section
-	for i := 0; i < 9; i += 3 {
-		for j := 0; j < 9; j += 3 {
-			counter := [10]int{}
-			for row := i; row < i+3; row++ {
-				for col := j; col < j+3; col++ {
+	//check 2x2 section
+	for i := 0; i < 4; i += 2 {
+		for j := 0; j < 4; j += 2 {
+			counter := [5]int{}
+			for row := i; row < i+2; row++ {
+				for col := j; col < j+2; col++ {
 					counter[board[row][col]]++
 				}
 				if hasDuplicates(counter) {
@@ -78,7 +83,14 @@ func isBoardValid(board [4][4]int) bool {
 	return true
 }
 
-func hasDuplicates([10]int) bool {
-
-	return true
+func hasDuplicates(counter [5]int) bool {
+	for i, count := range counter {
+		if i == 0 {
+			continue
+		}
+		if count > 1 {
+			return true
+		}
+	}
+	return false
 }
