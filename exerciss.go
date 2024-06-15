@@ -17,11 +17,11 @@ func main() {
 	board[3][2] = 2
 	//fmt.Println(board)
 	before := time.Now()
-	answ := algorithms.SolveAlgX(board)
+	answ := algorithms.SolveAlgX4_2(board)
 	after := time.Now()
 	dur := after.Sub(before)
 	fmt.Println(answ)
-	fmt.Printf("duration algorithmX %d us\n", dur.Microseconds())
+	fmt.Printf("duration algorithmX %d ns\n", dur.Nanoseconds())
 	//-------- DFS ---------
 	board[0][3] = 3
 	board[1][0] = 4
@@ -34,5 +34,5 @@ func main() {
 	after = time.Now()
 	dur = after.Sub(before)
 	fmt.Println(answ)
-	fmt.Printf("duration DFS %d us\n", dur.Microseconds())
+	fmt.Printf("duration DFS %d ns\n", dur.Nanoseconds())
 }
