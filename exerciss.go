@@ -9,6 +9,7 @@ import (
 func main() {
 	//-------- AlgorithmX ---------
 	board := [4][4]int{} //board[row][col]
+	//board[0][1] = 1
 	board[0][3] = 3
 	board[1][0] = 4
 	board[2][1] = 1

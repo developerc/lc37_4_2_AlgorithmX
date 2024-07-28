@@ -87,7 +87,48 @@ func fillTable(board *[4][4]int, colRowTable *[64]uint64) /*[64]uint64*/ {
 		}
 	}
 
-	//return colRowTable
+	//сформировали colRowTable как со всеми незаполненными ячейками board
+	//накроем строки в colRowTable для заполненных ячеек board
+	var row, col int
+	var mul5 uint64
+	var endLoop bool
+	for i := 0; i < 64; i += 4 {
+		if board[row][col] == 0 {
+			row, col, endLoop = nextCellBoard(row, col)
+			if endLoop {
+				break
+			} else {
+				continue
+			}
+		}
+		//накрываем строки кроме значения в ячейке board
+		for k := 1; k <= 4; k++ {
+			if board[row][col] == k {
+				continue
+			} else {
+				colRowTable[i+k-1] = colRowTable[i+k-1] & mul5
+			}
+		}
+
+		row, col, endLoop = nextCellBoard(row, col)
+		if endLoop {
+			break
+		}
+	}
+}
+
+func nextCellBoard(row, col int) (int, int, bool) {
+	var endLoop bool = false
+	if col == 3 {
+		col = 0
+		row++
+	} else {
+		col++
+	}
+	if row == 3 && col == 3 {
+		endLoop = true
+	}
+	return row, col, endLoop
 }
 
 func printTable(fileName string, colRowTable [64]uint64) {
