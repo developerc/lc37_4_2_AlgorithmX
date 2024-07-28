@@ -17,7 +17,7 @@ func main() {
 	board[3][2] = 2
 	//fmt.Println(board)
 	before := time.Now()
-	answ := algorithms.SolveAlgX4_2(board)
+	answ := algorithms.SolveAlgX4_3(board)
 	after := time.Now()
 	dur := after.Sub(before)
 	fmt.Println(answ)

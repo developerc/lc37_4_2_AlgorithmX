@@ -3,7 +3,6 @@ package algorithms
 import (
 	"fmt"
 	"os"
-	"strconv"
 )
 
 type NodeNet struct {
@@ -11,12 +10,15 @@ type NodeNet struct {
 	rowNet [64]Node
 }
 
+var NodeArr [100]Node
+
 var n int
 
 func SolveAlgX4_2(board [4][4]int) [4][4]int {
-	colRowNet := fillNet(&board)
-	printNetToFile("net"+strconv.Itoa(n)+".txt", colRowNet)
-	algX(colRowNet, &board)
+	fillNet(&board)
+	//colRowNet := fillNet(&board)
+	//printNetToFile("net"+strconv.Itoa(n)+".txt", colRowNet)
+	//algX(colRowNet, &board)
 	return board
 }
 
@@ -30,17 +32,22 @@ func fillNet(board *[4][4]int) NodeNet {
 	for i := 0; i < 64; i++ {
 		nodeNet.rowNet[i].col = i
 	}
+	nodeNet.colNet[0].nextRight = &NodeArr[0]
+	NodeArr[0].nextLeft = &nodeNet.colNet[0]
+	/*node := &Node{row: 0, col: 0, data: 1}
+	nodeNet.colNet[0].nextRight = node
+	node.nextLeft = &nodeNet.colNet[0]*/
 
-	var cNet, rNet int
+	//var cNet, rNet int
 	for row := 0; row < 4; row++ {
 		for col := 0; col < 4; col++ {
-			valEnd := 1
+			/*valEnd := 1
 			if board[row][col] == 0 { //если val равен 0 то добавляем Node для 1, 2, 3, 4
 				valEnd = 4
-			}
+			}*/
 
 			//ограничения в ячейках
-			cNet = col + 4*row //столбец
+			/*cNet = col + 4*row //столбец
 			for val := 1; val <= valEnd; val++ {
 				if valEnd == 1 {
 					rNet = 4*col + 16*row + board[row][col] - 1
@@ -56,7 +63,7 @@ func fillNet(board *[4][4]int) NodeNet {
 				}
 				nodeTemp.nextDown = node
 				node.nextUp = &nodeTemp
-			}
+			}*/
 			//ограничения в строках
 			/*for val := 1; val <= valEnd; val++ {
 				cNet = row + (val-1)*4 + 16 //столбец
@@ -82,7 +89,7 @@ func fillNet(board *[4][4]int) NodeNet {
 		}
 	}
 
-	for row := 0; row < 4; row++ {
+	/*for row := 0; row < 4; row++ {
 		for col := 0; col < 4; col++ {
 			valEnd := 1
 			if board[row][col] == 0 { //если val равен 0 то добавляем Node для 1, 2, 3, 4
@@ -98,6 +105,7 @@ func fillNet(board *[4][4]int) NodeNet {
 						rNet = 4*col + 16*row + val - 1 //ряд
 					}
 					node := &Node{row: rNet, col: cNet, data: 1}
+					//fmt.Println(node)
 					nodeNet.colNet[rNet].nextRight.nextRight = node
 					node.nextLeft = nodeNet.colNet[rNet].nextRight
 					nodeTemp := nodeNet.rowNet[cNet]
@@ -110,7 +118,7 @@ func fillNet(board *[4][4]int) NodeNet {
 
 			}
 		}
-	}
+	}*/
 	return nodeNet
 }
 
@@ -142,6 +150,7 @@ func printNetToFile(fileName string, colRowNet NodeNet) {
 			fo.WriteString("\t")
 		}
 		fo.WriteString("1")
+		fmt.Println(colRowNet.colNet[i].nextRight.nextRight)
 		//--
 	}
 
