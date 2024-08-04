@@ -15,7 +15,90 @@ func SolveAlgX4_3(board [4][4]int) [4][4]int {
 	fillTable(&board, &colRowTable)
 	//colRowTable := fillTable(&board)
 	printTable("net"+strconv.Itoa(Nex)+".txt", colRowTable)
+	Nex++
+	algX4(&colRowTable)
 	return board
+}
+
+func algX4(colRowTable *[64]uint64) {
+	//проверим isTableEmpty
+
+	numOneInCol, numOneRow, success := findOneInCol(colRowTable)
+	if success {
+		fmt.Println("numOneInCol = ", numOneInCol, ", numOneRow = ", numOneRow)
+		coverRowsWithOnes(numOneInCol, numOneRow, colRowTable)
+		printTable("net"+strconv.Itoa(Nex)+".txt", *colRowTable)
+		Nex++
+	} else {
+		fmt.Println("can't find one in col")
+	}
+
+}
+
+func coverRowsWithOnes(numOneInCol, numOneRow int, colRowTable *[64]uint64) { //накрываем соответствующие строки
+	//в строке с одной единицей найдем столбцы где есть единица
+	var onesSlice []int = make([]int, 0) //слайс с номерами столбцов где единица
+	for i := 0; i < 64; i++ {            //проходим по массиву чисел
+		mulCheck := colRowTable[numOneRow]
+		mulCheck |= 1 << i                      //В i-том разряде установим единицу
+		if mulCheck == colRowTable[numOneRow] { //если равны значит в этом разряде единица
+			onesSlice = append(onesSlice, i)
+		}
+	}
+	fmt.Println("onesSlice = ", onesSlice)
+	//для опорной строки нашли столбцы где единица, в этих столбцах будем находить строки где в этом разряде единица
+	var numColOne []uint64 = make([]uint64, 0)
+	var rowOnesSlice []int = make([]int, 0) //слайс с номерами строк где нашли единицу
+	for _, col := range onesSlice {         //создадим слайс из чисел с единицей в соответствующем разряде
+		var mul uint64
+		mul |= 1 << col
+		numColOne = append(numColOne, mul)
+	}
+	//fmt.Println(numColOne)
+	/*for _, mul := range numColOne {
+		fmt.Printf("%064b\n", mul)
+	}*/
+	for i := 0; i < 64; i++ {
+		for _, mul := range numColOne {
+			mulCheck := colRowTable[i]
+			mulCheck |= mul
+			if mulCheck == colRowTable[i] {
+				rowOnesSlice = append(rowOnesSlice, i)
+				break
+			}
+		}
+	}
+	fmt.Println("rowOnesSlice = ", rowOnesSlice)
+	for _, numRowCower := range rowOnesSlice {
+		colRowTable[numRowCower] = 0
+	}
+}
+
+func findOneInCol(colRowTable *[64]uint64) (int, int, bool) { //найдем столбец с одной единицей и строку где эта единица
+	var cntOnes, rowOne int
+	//Получим копию i-го числа массива colRowTable. В j-том разряде установим единицу
+	//если число не изменится, то в этом разряде у него единица
+	for j := 0; j < 64; j++ { //проходим по столбцу (номер разряда)
+		cntOnes = 0
+		for i := 0; i < 64; i++ { //проходим по массиву чисел
+			if colRowTable[i] == 0 {
+				continue
+			}
+			mulCheck := colRowTable[i]
+			mulCheck |= 1 << j //В j-том разряде установим единицу
+			if mulCheck == colRowTable[i] {
+				//fmt.Printf("%064b\n", colRowTable[i])
+				//fmt.Printf("%064b\n", mulCheck)
+				rowOne = i
+				cntOnes++
+			}
+		}
+		//fmt.Println("cntOnes = ", cntOnes)
+		if cntOnes == 1 {
+			return j, rowOne, true
+		}
+	}
+	return 0, 0, false
 }
 
 func fillTable(board *[4][4]int, colRowTable *[64]uint64) /*[64]uint64*/ {
