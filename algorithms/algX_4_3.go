@@ -3,7 +3,6 @@ package algorithms
 import (
 	"fmt"
 	"os"
-	"strconv"
 )
 
 var iter int
@@ -14,25 +13,37 @@ func SolveAlgX4_3(board [4][4]int) [4][4]int {
 	var colRowTable [64]uint64
 	fillTable(&board, &colRowTable)
 	//colRowTable := fillTable(&board)
-	printTable("net"+strconv.Itoa(Nex)+".txt", colRowTable)
-	Nex++
-	algX4(&colRowTable)
+	/*printTable("net"+strconv.Itoa(Nex)+".txt", colRowTable)
+	Nex++*/
+	algX4(colRowTable)
 	return board
 }
 
-func algX4(colRowTable *[64]uint64) {
-	//проверим isTableEmpty
+func algX4(colRowTable [64]uint64) {
+	//проверим все ли строки накрыты
+	if tableIsEmpty(&colRowTable) {
+		return
+	}
 
-	numOneInCol, numOneRow, success := findOneInCol(colRowTable)
+	numOneInCol, numOneRow, success := findOneInCol(&colRowTable)
 	if success {
-		fmt.Println("numOneInCol = ", numOneInCol, ", numOneRow = ", numOneRow)
-		coverRowsWithOnes(numOneInCol, numOneRow, colRowTable)
-		printTable("net"+strconv.Itoa(Nex)+".txt", *colRowTable)
-		Nex++
+		//fmt.Println("numOneInCol = ", numOneInCol, ", numOneRow = ", numOneRow)
+		coverRowsWithOnes(numOneInCol, numOneRow, &colRowTable)
+		/*printTable("net"+strconv.Itoa(Nex)+".txt", colRowTable)
+		Nex++*/
 	} else {
 		fmt.Println("can't find one in col")
 	}
+	algX4(colRowTable)
+}
 
+func tableIsEmpty(colRowTable *[64]uint64) bool {
+	for i := 0; i < 64; i++ {
+		if colRowTable[i] != 0 {
+			return false
+		}
+	}
+	return true
 }
 
 func coverRowsWithOnes(numOneInCol, numOneRow int, colRowTable *[64]uint64) { //накрываем соответствующие строки
@@ -45,7 +56,7 @@ func coverRowsWithOnes(numOneInCol, numOneRow int, colRowTable *[64]uint64) { //
 			onesSlice = append(onesSlice, i)
 		}
 	}
-	fmt.Println("onesSlice = ", onesSlice)
+	//fmt.Println("onesSlice = ", onesSlice)
 	//для опорной строки нашли столбцы где единица, в этих столбцах будем находить строки где в этом разряде единица
 	var numColOne []uint64 = make([]uint64, 0)
 	var rowOnesSlice []int = make([]int, 0) //слайс с номерами строк где нашли единицу
@@ -68,7 +79,7 @@ func coverRowsWithOnes(numOneInCol, numOneRow int, colRowTable *[64]uint64) { //
 			}
 		}
 	}
-	fmt.Println("rowOnesSlice = ", rowOnesSlice)
+	//fmt.Println("rowOnesSlice = ", rowOnesSlice)
 	for _, numRowCower := range rowOnesSlice {
 		colRowTable[numRowCower] = 0
 	}
